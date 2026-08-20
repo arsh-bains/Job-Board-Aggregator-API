@@ -4,17 +4,10 @@ from sqlalchemy.orm import Session
 from app import models, schemas
 from app.auth import verify_token
 from app.database import SessionLocal
+from app.database import get_db
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login")
 router = APIRouter()
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     payload = verify_token(token)
