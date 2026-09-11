@@ -1,6 +1,6 @@
 from passlib.context import CryptContext
 from jose import JWTError, jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, status
 from app.config import Settings
 settings = Settings()
@@ -19,7 +19,7 @@ def verify_password(plain, hashed):
 
 
 def create_access_token(data: dict):
-    data["exp"] = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    data["exp"] = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     token = jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
     return token
 
@@ -30,5 +30,3 @@ def verify_token(token: str):
         return payload
     except JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-
-
