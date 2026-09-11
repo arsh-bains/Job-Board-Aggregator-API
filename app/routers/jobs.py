@@ -3,7 +3,7 @@ import time
 from fastapi import APIRouter
 from typing import Optional
 
-router = APIRouter(prefix="/jobs")
+router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 _cache = {"data": None, "timestamp": 0}
 CACHE_TTL = 600  # 10 minutes

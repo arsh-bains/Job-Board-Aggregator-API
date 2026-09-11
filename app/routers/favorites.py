@@ -1,21 +1,13 @@
-from fastapi import Depends,APIRouter
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends,APIRouter, HTTPException,status
 from sqlalchemy.orm import Session
 from app import models, schemas
-from app.auth import verify_token
-from app.database import SessionLocal
-from app.database import get_db
+from app.dependencies import get_current_user,get_db
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login")
+
 router = APIRouter()
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    payload = verify_token(token)
-    username = payload.get("sub")
-    user = db.query(models.User).filter(models.User.username == username).first()
-    return user
 
-@router.post("/favorites")
+@router.post("/favorites", response_model=schemas.FavoriteOut)
 def save_favorite(
     favorite: schemas.FavoriteCreate,
     db: Session = Depends(get_db),
@@ -28,7 +20,7 @@ def save_favorite(
     db.refresh(new_fav)
     return new_fav
 
-@router.get("/favorites")
+@router.get("/favorites", response_model=list[schemas.FavoriteOut])
 def get_favs(db: Session = Depends(get_db), current_user = Depends(get_current_user)):
     return db.query(models.Favorite).filter(models.Favorite.user_id == current_user.id).all()
 
@@ -36,6 +28,8 @@ def get_favs(db: Session = Depends(get_db), current_user = Depends(get_current_u
 def del_favs(job_id: str, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
     fav = db.query(models.Favorite).filter(models.Favorite.user_id == current_user.id,
     models.Favorite.job_id == job_id).first()
+    if fav is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not Found")
     db.delete(fav)
     db.commit()
     return {"message": "Deleted"}
